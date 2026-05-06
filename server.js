@@ -36,6 +36,14 @@ const corsMiddleware = cors({
 app.use(corsMiddleware);
 app.use(express.json());
 
+// GET /api/get-phone (gọi nhầm method) -> trả lỗi JSON rõ ràng
+app.get("/api/get-phone", (_req, res) => {
+  return res.status(405).json({
+    error: "Method Not Allowed",
+    message: "Endpoint này chỉ hỗ trợ POST /api/get-phone với JSON body.",
+  });
+});
+
 // POST /api/get-phone
 // Body: { accessToken, token } — theo tài liệu Zalo:
 //   accessToken: user access token (ủy quyền người dùng trên Mini App)
@@ -90,6 +98,11 @@ app.post("/api/get-phone", async (req, res) => {
 });
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
+// Fallback cho các route /api/* chưa được khai báo -> trả JSON thay vì HTML
+app.use("/api", (_req, res) => {
+  return res.status(404).json({ error: "Not Found" });
+});
 
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại http://localhost:${PORT}`);
