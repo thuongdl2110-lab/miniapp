@@ -60,9 +60,7 @@ app.post("/api/get-phone", async (req, res) => {
       .status(500)
       .json({ error: "Server chưa cấu hình ZALO_APP_SECRET" });
   }
-  
-
-  try {
+    try {
     const response = await axios.get("https://graph.zalo.me/v2.0/me/info", {
       headers: {
         access_token: userAccessToken,
