@@ -37,29 +37,36 @@ app.use(corsMiddleware);
 app.use(express.json());
 
 // POST /api/get-phone
-// Body: { token: string }  — token lấy từ getPhoneNumber() của ZMP SDK
+// Body: { accessToken, token } — theo tài liệu Zalo:
+//   accessToken: user access token (ủy quyền người dùng trên Mini App)
+//   token: mã từ getPhoneNumber() (header "code" khi gọi Graph API)
+// Docs: https://developers.zalo.me/docs/mini-app/api-zalo/get-phone-number
 app.post("/api/get-phone", async (req, res) => {
-  const { token } = req.body;
+  const userAccessToken =
+    req.body.accessToken ?? req.body.userAccessToken ?? req.body.access_token;
+  const phoneCode = req.body.token ?? req.body.code;
 
-  if (!token) {
-    return res.status(400).json({ error: "Thiếu token" });
+  if (!userAccessToken) {
+    return res.status(400).json({ error: "Thiếu accessToken (user access token)" });
+  }
+  if (!phoneCode) {
+    return res.status(400).json({ error: "Thiếu token/code từ getPhoneNumber()" });
   }
 
-  const appId = process.env.ZALO_APP_ID;
   const appSecret = process.env.ZALO_APP_SECRET;
 
-  if (!appId || !appSecret) {
+  if (!appSecret) {
     return res
       .status(500)
-      .json({ error: "Server chưa cấu hình ZALO_APP_ID hoặc ZALO_APP_SECRET" });
+      .json({ error: "Server chưa cấu hình ZALO_APP_SECRET" });
   }
+  
 
   try {
-    // Zalo Open API: đổi code (token từ getPhoneNumber) lấy số điện thoại
-    // Docs: https://developers.zalo.me/docs/mini-app/api-zalo/get-phone-number
     const response = await axios.get("https://graph.zalo.me/v2.0/me/info", {
       headers: {
-        access_token: token,
+        access_token: userAccessToken,
+        code: phoneCode,
         secret_key: appSecret,
         "Content-Type": "application/json",
       },
